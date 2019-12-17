@@ -43,46 +43,28 @@ function getForecast(city, callback) {
 }
 
 function fetchCurrentCity() {
-  const operation = {
-    successReactions: [],
-    errorReactions: []
-  };
-
-  getCurrentCity(function (error, result) {
-    if (error) {
-      operation.errorReactions.forEach(r => r(error));
-      return;
-    }
-    operation.successReactions.forEach(r => r(result));
-  });
-
-  operation.onCompletion = function setCallbacks(onSuccess, onError) {
-    const noop = function () { };
-
-    operation.successReactions.push(onSuccess || noop);
-    operation.errorReactions.push(onError || noop);
-  };
-
-  operation.onFailure = function onFailure(onError) {
-    operation.onCompletion(null, onError);
-  }
-
+  const operation = new Operation();
+  getCurrentCity(operation.nodeCallback);
   return operation;
 }
 
 function fetchWeather(city) {
+  const operation = new Operation();
+  getWeather(city, operation.nodeCallback);
+  return operation;
+}
+
+function fetchForecast(city) {
+  const operation = new Operation();
+  getCurrentCity(city, operation.nodeCallback);
+  return operation;
+}
+
+function Operation() {
   const operation = {
     successReactions: [],
     errorReactions: []
   };
-
-  getWeather(city, function (error, result) {
-    if (error) {
-      operation.errorReactions.forEach(r => r(error));
-      return;
-    }
-    operation.successReactions.forEach(r => r(result));
-  });
 
   operation.onCompletion = function setCallbacks(onSuccess, onError) {
     const noop = function () { };
@@ -94,6 +76,22 @@ function fetchWeather(city) {
   operation.onFailure = function onFailure(onError) {
     operation.onCompletion(null, onError);
   }
+
+  operation.fail = function fail(error) {
+    operation.errorReactions.forEach(r => r(error));
+  }
+
+  operation.succeed = function succeed(result) {
+    operation.successReactions.forEach(r => r(result));
+  }
+
+  operation.nodeCallback = function nodeCallback(error, result) {
+    if (error) {
+      operation.fail(error);
+      return;
+    }
+    operation.succeed(result);
+  };
 
   return operation;
 }
