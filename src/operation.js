@@ -43,19 +43,22 @@ function getForecast(city, callback) {
 }
 
 function fetchCurrentCity() {
-  const operation = {};
+  const operation = {
+    successReactions: [],
+    errorReactions: []
+  };
 
   getCurrentCity(function (error, result) {
     if (error) {
-      operation.onError(error);
+      operation.errorReactions.forEach(r => r(error));
       return;
     }
-    operation.onSuccess(result);
+    operation.successReactions.forEach(r => r(result));
   });
 
   operation.setCallbacks = function setCallbacks(onSuccess, onError) {
-    operation.onSuccess = onSuccess;
-    operation.onError = onError;
+    operation.successReactions.push(onSuccess);
+    operation.errorReactions.push(onError);
   };
 
   return operation;
@@ -64,10 +67,11 @@ function fetchCurrentCity() {
 test("pass multiple callbacks - all of them are called", function (done) {
   //initiate operation
   const operation = fetchCurrentCity();
+  const multiDone = callDone(done).afterTwoCalls();
 
   //register callbacks
-  operation.setCallbacks(result => done());
-  operation.setCallbacks(result => done());
+  operation.setCallbacks(result => multiDone());
+  operation.setCallbacks(result => multiDone());
 });
 
 test("fetchCurrentCity pass the callbacks later on", function (done) {
