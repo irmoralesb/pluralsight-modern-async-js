@@ -55,17 +55,8 @@ function fetchCurrentCity(onSuccess, onError) {
 
 
 test("fetchCurrentCity with separate success and error callbacks", function(){
-  
-  function onSuccess(success){
-    console.log(success);
-  }
-  
-  function onError(error){
-    console.log(error);
-  }
-
-  fetchCurrentCity(onSuccess,onError);
-
+  //We can use also this other syntax option instead of external functions, since we are only printing either the error or result
+  fetchCurrentCity(result => console.log(result), error => console.log(error));
 });
 
 
