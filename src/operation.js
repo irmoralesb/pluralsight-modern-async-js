@@ -56,13 +56,69 @@ function fetchCurrentCity() {
     operation.successReactions.forEach(r => r(result));
   });
 
-  operation.setCallbacks = function setCallbacks(onSuccess, onError) {
-    operation.successReactions.push(onSuccess);
-    operation.errorReactions.push(onError);
+  operation.onCompletion = function setCallbacks(onSuccess, onError) {
+    const noop = function () { };
+
+    operation.successReactions.push(onSuccess || noop);
+    operation.errorReactions.push(onError || noop);
   };
+
+  operation.onFailure = function onFailure(onError) {
+    operation.onCompletion(null, onError);
+  }
 
   return operation;
 }
+
+function fetchWeather(city) {
+  const operation = {
+    successReactions: [],
+    errorReactions: []
+  };
+
+  getWeather(city, function (error, result) {
+    if (error) {
+      operation.errorReactions.forEach(r => r(error));
+      return;
+    }
+    operation.successReactions.forEach(r => r(result));
+  });
+
+  operation.onCompletion = function setCallbacks(onSuccess, onError) {
+    const noop = function () { };
+
+    operation.successReactions.push(onSuccess || noop);
+    operation.errorReactions.push(onError || noop);
+  };
+
+  operation.onFailure = function onFailure(onError) {
+    operation.onCompletion(null, onError);
+  }
+
+  return operation;
+}
+
+test("noop if no success handler passed", function (done) {
+  //initiate operation
+  const operation = fetchCurrentCity();
+
+  //noop should register for success handler
+  operation.onFailure(error => done(error));
+
+  //trigger success to make sure noop registered
+  operation.onCompletion(result => done());
+});
+
+test("noop if no error handler passed", function (done) {
+  //initiate operation
+  const operation = fetchWeather();
+
+  //noop should register for error handler
+  operation.onCompletion(result => done(new Error("shouldn't succeed")));
+
+  //trigger success to make sure noop registered
+  operation.onFailure(error => done());
+});
 
 test("pass multiple callbacks - all of them are called", function (done) {
   //initiate operation
@@ -70,8 +126,8 @@ test("pass multiple callbacks - all of them are called", function (done) {
   const multiDone = callDone(done).afterTwoCalls();
 
   //register callbacks
-  operation.setCallbacks(result => multiDone());
-  operation.setCallbacks(result => multiDone());
+  operation.onCompletion(result => multiDone());
+  operation.onCompletion(result => multiDone());
 });
 
 test("fetchCurrentCity pass the callbacks later on", function (done) {
@@ -79,7 +135,7 @@ test("fetchCurrentCity pass the callbacks later on", function (done) {
   const operation = fetchCurrentCity();
 
   //register callbacks
-  operation.setCallbacks(
+  operation.onCompletion(
     result => done(),
     error => done(error)
   );
