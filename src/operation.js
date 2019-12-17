@@ -2,7 +2,6 @@ const delayms = 1;
 
 function getCurrentCity(callback) {
   setTimeout(function () {
-
     const city = "New York, NY";
     callback(null, city);
 
@@ -43,20 +42,33 @@ function getForecast(city, callback) {
   }, delayms)
 }
 
-function fetchCurrentCity(onSuccess, onError) {
+function fetchCurrentCity() {
+  const operation = {};
+
   getCurrentCity(function (error, result){
     if(error){
-      onError(error);
+      operation.onError(error);
       return;
     }
-    onSuccess(result);
+    operation.onSuccess(result);
   });
+
+  operation.setCallbacks = function setCallbacks(onSuccess, onError){
+    operation.onSuccess = onSuccess;
+    operation.onError = onError;
+  };
+
+  return operation;
 }
 
 
-test("fetchCurrentCity with separate success and error callbacks", function(){
-  //We can use also this other syntax option instead of external functions, since we are only printing either the error or result
-  fetchCurrentCity(result => console.log(result), error => console.log(error));
+test("fetchCurrentCity pass the callbacks later on",function(done){
+  //initiate operation
+  const operation = fetchCurrentCity();
+
+  //register callbacks
+  operation.setCallbacks(
+    result => done(),
+    error => done(error)
+  );
 });
-
-
